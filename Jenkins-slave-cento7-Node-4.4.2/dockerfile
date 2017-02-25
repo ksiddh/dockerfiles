@@ -1,0 +1,35 @@
+
+FROM centos:centos7
+MAINTAINER Kumar Siddhartha <k.siddhartha@hotmail.com>
+
+RUN yum -y update
+RUN yum -y install sudo
+RUN yum -y install openssh-server
+RUN yum install -y java-1.8.0-openjdk
+RUN yum install -y git
+RUN yum install -y python-setuptools
+RUN easy_install pip
+RUN pip install  supervisor
+
+RUN echo "root:password" | chpasswd
+RUN useradd jenkins
+RUN echo "jenkins:jenkins" | chpasswd
+RUN echo "jenkins ALL=NOPASSWD: ALL" >> /etc/sudoers
+
+
+RUN mkdir -p /var/run/sshd
+RUN ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key -N ''
+RUN sed -i 's|session    required     pam_loginuid.so|session    optional     pam_loginuid.so|g' /etc/pam.d/sshd
+
+RUN sed -i "s/^.*requiretty/#Defaults requiretty/" /etc/sudoers
+
+RUN mkdir -p /var/run/supervisord
+ADD supervisord.conf /etc/supervisord.conf
+
+#Install Node
+RUN yum install -y epel-release
+RUN yum install -y nodejs
+RUN yum install -y npm
+
+EXPOSE 22
+CMD ["/usr/bin/supervisord"]
